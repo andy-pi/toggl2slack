@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 config.py
+package.zip
 .Python
 env/
 build/
