@@ -3,7 +3,7 @@ from config import *
 import datetime
 from slacker import Slacker
 
-def lambda_handler():
+def lambda_handler(event, context):
     
     slack = Slacker(SLACKAPI)
     
