@@ -30,14 +30,19 @@ def lambda_handler(event, context):
     # For each toggl project
     for project in data['data']:
         title = project['title']['project']
-        sumofproject=0
+        sumofproject_time=datetime.timedelta(seconds=0)
         # For each toggle time entry
         for i in project['items']:
             time_entry_label = i['title']['time_entry']
-            time_of_entry = i['time']/(1000*60*60)
-            sumofproject+=(i['time']/(1000*60*60)) # add up the total for each project as we go along in hours
-            msgstring = msgstring + "    " + time_entry_label + ": " + str(time_of_entry) + "\n"
-        msgstring = msgstring + "TOTAL for " + title + ": " + str(sumofproject) + "\n\n"
+            time_of_entry = i['time']/(1000) # time in seconds
+            # sum time in timedeltatype    
+            sumofproject_time += datetime.timedelta(seconds=time_of_entry)
+            time_entry_hours=datetime.timedelta(seconds=time_of_entry)
+            msgstring = msgstring + "    " + time_entry_label + ": " + str(time_entry_hours)[:-3] + "\n"
+            
+        sumofproject_hours = int(sumofproject_time.total_seconds()/3600) # get whole number
+        sumofproject_remainder_s = int((sumofproject_time.total_seconds()%3600)/60) # get remainder mins
+        msgstring = msgstring + "TOTAL for " + title + ": " + str(sumofproject_hours) + ":" +str(sumofproject_remainder_s)+ "\n\n"
     
     
     # Get all the time entries in the past year
@@ -48,19 +53,21 @@ def lambda_handler(event, context):
     # Total yearly hours of certain project completed
     for project in data['data']:
         title = project['title']['project']
-        sumofproject=0
+        sumofproject_time=datetime.timedelta(seconds=0)
         if (title==YEARPROJECT):
             # For each toggle time entry
             for i in project['items']:
-                sumofproject+=(i['time']/(1000*60*60)) # add up the total for each project as we go along in hours
+                time_of_entry = i['time']/(1000) # time in seconds
+                sumofproject_time += datetime.timedelta(seconds=time_of_entry)
             
-    hours_remaining = 640 - sumofproject
+    sumofproject_hours = int(sumofproject_time.total_seconds()/3600)
+    hours_remaining = 640 - sumofproject_hours
     weeks_remaining = 52 - datetime.date(now.year, now.month, now.day).isocalendar()[1]
     average_hours_pwr = hours_remaining / weeks_remaining
     
-    msgstring = msgstring + YEARPROJECT + " hours completed this year: " + str(sumofproject) + "\n"
+    msgstring = msgstring + YEARPROJECT + " hours completed this year: " + str(sumofproject_hours) + "\n"
     msgstring = msgstring + "Average hours per week remaining: " + str(average_hours_pwr) + "\n"
-    
+
     for tries in range(8):
     	try:
     		slack.chat.post_message('#weather', msgstring)
